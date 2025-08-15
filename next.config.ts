@@ -1,7 +1,59 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Image optimization configuration
+  images: {
+    // Enable image optimization
+    formats: ['image/webp', 'image/avif'],
+    // Configure image domains if needed for external images
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+    // Optimize image sizes
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+  
+  // Bundle optimization
+  experimental: {
+    // Enable optimized package imports
+    optimizePackageImports: ['lucide-react', 'react-leaflet'],
+  },
+  
+  // Webpack optimizations
+  webpack: (config, { dev, isServer }) => {
+    // Optimize bundle size in production
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            // Separate chunk for map components (lazy loaded)
+            map: {
+              name: 'map',
+              test: /[\\/]node_modules[\\/](leaflet|react-leaflet)[\\/]/,
+              chunks: 'all',
+              priority: 10,
+            },
+            // Separate chunk for UI components
+            ui: {
+              name: 'ui',
+              test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
+              chunks: 'all',
+              priority: 5,
+            },
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
 };
 
 export default nextConfig;
