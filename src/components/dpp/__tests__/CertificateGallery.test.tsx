@@ -304,7 +304,7 @@ describe('CertificateGallery', () => {
       const supplierWithNullCertificates: SupplierWithCertificates[] = [
         {
           ...mockSuppliersWithCertificates[0],
-          certificates: null as any
+          certificates: null as never
         }
       ];
 

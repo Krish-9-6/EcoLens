@@ -1,0 +1,29 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="60" y="60" width="1080" height="510" rx="20" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  
+  <!-- EcoLens Logo/Title -->
+  <text x="600" y="200" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="#ffffff" text-anchor="middle">EcoLens</text>
+  
+  <!-- Tagline -->
+  <text x="600" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="600" fill="#94a3b8" text-anchor="middle">From Black Box to Crystal Clear</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#64748b" text-anchor="middle">Trust Engine for Fashion Supply Chains</text>
+  
+  <!-- Blockchain icon representation -->
+  <g transform="translate(500, 400)">
+    <rect x="0" y="0" width="40" height="40" rx="8" fill="#10b981" opacity="0.8"/>
+    <rect x="60" y="0" width="40" height="40" rx="8" fill="#10b981" opacity="0.6"/>
+    <rect x="120" y="0" width="40" height="40" rx="8" fill="#10b981" opacity="0.4"/>
+    <rect x="180" y="0" width="40" height="40" rx="8" fill="#10b981" opacity="0.2"/>
+    
+    <!-- Connection lines -->
+    <line x1="40" y1="20" x2="60" y2="20" stroke="#10b981" stroke-width="3" opacity="0.6"/>
+    <line x1="100" y1="20" x2="120" y2="20" stroke="#10b981" stroke-width="3" opacity="0.4"/>
+    <line x1="160" y1="20" x2="180" y2="20" stroke="#10b981" stroke-width="3" opacity="0.3"/>
+  </g>
+  
+  <!-- URL -->
+  <text x="600" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#475569" text-anchor="middle">ecolens.com</text>
+</svg>

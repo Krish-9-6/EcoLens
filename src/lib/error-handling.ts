@@ -5,7 +5,7 @@
 export interface DppError extends Error {
   code?: string
   status?: number
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 }
 
 export class DppErrorHandler {
@@ -16,7 +16,7 @@ export class DppErrorHandler {
     message: string,
     code?: string,
     status?: number,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): DppError {
     const error = new Error(message) as DppError
     error.code = code
@@ -28,7 +28,7 @@ export class DppErrorHandler {
   /**
    * Logs errors with structured data for monitoring
    */
-  static logError(error: DppError, additionalContext?: Record<string, any>) {
+  static logError(error: DppError, additionalContext?: Record<string, unknown>) {
     const errorData = {
       message: error.message,
       code: error.code,
@@ -52,23 +52,27 @@ export class DppErrorHandler {
   /**
    * Determines if an error is retryable
    */
-  static isRetryableError(error: any): boolean {
+  static isRetryableError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+    
+    const err = error as Record<string, unknown>
+    
     // Network errors
-    if (error?.code === 'NETWORK_ERROR') return true
-    if (error?.code === 'TIMEOUT') return true
-    if (error?.name === 'NetworkError') return true
+    if (err.code === 'NETWORK_ERROR') return true
+    if (err.code === 'TIMEOUT') return true
+    if (err.name === 'NetworkError') return true
     
     // Server errors (5xx)
-    if (error?.status >= 500 && error?.status < 600) return true
+    if (typeof err.status === 'number' && err.status >= 500 && err.status < 600) return true
     
     // Specific database errors that might be temporary
-    if (error?.code === 'PGRST000') return true // Generic PostgREST error
-    if (error?.code === 'PGRST001') return true // Connection error
+    if (err.code === 'PGRST000') return true // Generic PostgREST error
+    if (err.code === 'PGRST001') return true // Connection error
     
     // Don't retry client errors or specific database errors
-    if (error?.status >= 400 && error?.status < 500) return false
-    if (error?.code === 'PGRST116') return false // Not found
-    if (error?.code === 'PGRST301') return false // Permission denied
+    if (typeof err.status === 'number' && err.status >= 400 && err.status < 500) return false
+    if (err.code === 'PGRST116') return false // Not found
+    if (err.code === 'PGRST301') return false // Permission denied
     
     return false
   }
@@ -76,28 +80,34 @@ export class DppErrorHandler {
   /**
    * Gets a user-friendly error message
    */
-  static getUserFriendlyMessage(error: any): string {
-    if (error?.code === 'PGRST116') {
+  static getUserFriendlyMessage(error: unknown): string {
+    if (!error || typeof error !== 'object') {
+      return 'An unexpected error occurred. Please try again.'
+    }
+    
+    const err = error as Record<string, unknown>
+    
+    if (err.code === 'PGRST116') {
       return 'The requested product could not be found.'
     }
     
-    if (error?.code === 'NETWORK_ERROR' || error?.name === 'NetworkError') {
+    if (err.code === 'NETWORK_ERROR' || err.name === 'NetworkError') {
       return 'Unable to connect to our servers. Please check your internet connection.'
     }
     
-    if (error?.code === 'TIMEOUT') {
+    if (err.code === 'TIMEOUT') {
       return 'The request took too long to complete. Please try again.'
     }
     
-    if (error?.status >= 500) {
+    if (typeof err.status === 'number' && err.status >= 500) {
       return 'Our servers are experiencing issues. Please try again in a moment.'
     }
     
-    if (error?.status === 404) {
+    if (err.status === 404) {
       return 'The requested resource was not found.'
     }
     
-    if (error?.status >= 400 && error?.status < 500) {
+    if (typeof err.status === 'number' && err.status >= 400 && err.status < 500) {
       return 'There was an issue with your request. Please try again.'
     }
     
@@ -109,7 +119,7 @@ export class DppErrorHandler {
    */
   static async withErrorHandling<T>(
     fn: () => Promise<T>,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): Promise<T> {
     try {
       return await fn()
@@ -128,13 +138,13 @@ export class DppErrorHandler {
  * Error boundary hook for React components
  */
 export function useErrorHandler() {
-  const handleError = (error: Error, errorInfo?: any) => {
+  const handleError = (error: Error, errorInfo?: unknown) => {
     const dppError = error as DppError
     DppErrorHandler.logError(dppError, { errorInfo })
   }
 
   const createErrorHandler = (componentName: string) => {
-    return (error: Error, errorInfo?: any) => {
+    return (error: Error, errorInfo?: unknown) => {
       handleError(error, { component: componentName, ...errorInfo })
     }
   }

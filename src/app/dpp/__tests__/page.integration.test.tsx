@@ -1,19 +1,19 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import DppPage, { generateMetadata } from '../[productId]/page';
 import type { DppData } from '<ecolens>/lib/types';
 
 // Mock the data fetching function
-const mockFetchDppData = vi.fn();
 vi.mock('<ecolens>/lib/data', () => ({
-  fetchDppData: mockFetchDppData,
+  fetchDppData: vi.fn(),
 }));
 
 // Mock Next.js dynamic import for map component
 vi.mock('next/dynamic', () => ({
-  default: (importFn: any, options: any) => {
+  default: (importFn: () => Promise<React.ComponentType>, options: { ssr?: boolean }) => {
     if (options?.ssr === false) {
-      return ({ children, ...props }: any) => (
+      return ({ children, ...props }: React.ComponentProps<'div'>) => (
         <div data-testid="mock-dynamic-component" {...props}>
           {children}
         </div>
@@ -25,19 +25,21 @@ vi.mock('next/dynamic', () => ({
 
 // Mock react-leaflet components
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, ...props }: any) => (
+  MapContainer: ({ children, ...props }: React.ComponentProps<'div'>) => (
     <div data-testid="map-container" {...props}>{children}</div>
   ),
-  TileLayer: (props: any) => <div data-testid="tile-layer" {...props} />,
-  Marker: ({ children, ...props }: any) => (
+  TileLayer: (props: React.ComponentProps<'div'>) => <div data-testid="tile-layer" {...props} />,
+  Marker: ({ children, ...props }: React.ComponentProps<'div'>) => (
     <div data-testid="marker" {...props}>{children}</div>
   ),
-  Popup: ({ children, ...props }: any) => (
+  Popup: ({ children, ...props }: React.ComponentProps<'div'>) => (
     <div data-testid="popup" {...props}>{children}</div>
   ),
 }));
 
 describe('DPP Page Integration', () => {
+  const mockFetchDppData = vi.mocked((await import('<ecolens>/lib/data')).fetchDppData);
+  
   const mockDppData: DppData = {
     product: {
       id: 'product-123',

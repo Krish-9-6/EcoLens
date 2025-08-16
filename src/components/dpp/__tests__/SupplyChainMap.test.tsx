@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SupplyChainMap } from '../SupplyChainMap';
@@ -5,10 +6,10 @@ import type { SupplierWithCertificates } from '<ecolens>/lib/types';
 
 // Mock Next.js dynamic import
 vi.mock('next/dynamic', () => ({
-  default: (importFn: any, options: any) => {
+  default: (importFn: () => Promise<any>, options: { ssr?: boolean }) => {
     if (options?.ssr === false) {
       // Return a mock component for SSR-disabled components
-      return ({ children, ...props }: any) => (
+      return ({ children, ...props }: React.ComponentProps<'div'>) => (
         <div data-testid="mock-map-component" {...props}>
           {children}
         </div>
@@ -20,7 +21,7 @@ vi.mock('next/dynamic', () => ({
 
 // Mock react-leaflet components
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, center, zoom, onError, ...props }: any) => (
+  MapContainer: ({ children, center, zoom, onError, ...props }: React.ComponentProps<'div'> & { center: [number, number]; zoom: number; onError?: () => void }) => (
     <div 
       data-testid="map-container" 
       data-center={JSON.stringify(center)}
@@ -30,7 +31,7 @@ vi.mock('react-leaflet', () => ({
       {children}
     </div>
   ),
-  TileLayer: ({ url, attribution, onError, ...props }: any) => (
+  TileLayer: ({ url, attribution, onError, ...props }: React.ComponentProps<'div'> & { url: string; attribution?: string; onError?: () => void }) => (
     <div 
       data-testid="tile-layer" 
       data-url={url}
@@ -38,7 +39,7 @@ vi.mock('react-leaflet', () => ({
       {...props}
     />
   ),
-  Marker: ({ position, children, ...props }: any) => (
+  Marker: ({ position, children, ...props }: React.ComponentProps<'div'> & { position: [number, number] }) => (
     <div 
       data-testid="marker" 
       data-position={JSON.stringify(position)}
@@ -47,7 +48,7 @@ vi.mock('react-leaflet', () => ({
       {children}
     </div>
   ),
-  Popup: ({ children, ...props }: any) => (
+  Popup: ({ children, ...props }: React.ComponentProps<'div'>) => (
     <div data-testid="popup" {...props}>
       {children}
     </div>

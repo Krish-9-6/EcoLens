@@ -1,10 +1,11 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { ProductNotFound } from '../ProductNotFound';
 
 // Mock Next.js Link component
 vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: any) => (
+  default: ({ children, href, ...props }: React.ComponentProps<'a'>) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -113,7 +114,7 @@ describe('ProductNotFound', () => {
 
     it('should render refresh icon in retry button', () => {
       const mockRetry = vi.fn();
-      const { container } = render(<ProductNotFound {...defaultProps} onRetry={mockRetry} />);
+      render(<ProductNotFound {...defaultProps} onRetry={mockRetry} />);
       
       const retryButton = screen.getByText('Try Again');
       const refreshIcon = retryButton.parentElement?.querySelector('.w-4.h-4');

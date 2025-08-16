@@ -12,7 +12,7 @@ export function JourneyTimeline({ suppliers }: JourneyTimelineProps) {
   // Sort suppliers by tier (Tier 3 → Tier 2 → Tier 1)
   const sortedSuppliers = [...suppliers].sort((a, b) => b.tier - a.tier);
 
-  const handleViewCertificates = (supplierId: string) => {
+  const handleViewCertificates = () => {
     const el = document.getElementById("certificates");
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });

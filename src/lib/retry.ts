@@ -6,7 +6,7 @@ export interface RetryOptions {
   baseDelay?: number
   maxDelay?: number
   backoffFactor?: number
-  retryCondition?: (error: any) => boolean
+  retryCondition?: (error: unknown) => boolean
 }
 
 /**
@@ -17,16 +17,20 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   baseDelay: 1000, // 1 second
   maxDelay: 10000, // 10 seconds
   backoffFactor: 2,
-  retryCondition: (error: any) => {
+  retryCondition: (error: unknown) => {
+    if (!error || typeof error !== 'object') return true
+    
+    const err = error as Record<string, unknown>
+    
     // Retry on network errors, timeouts, and 5xx server errors
-    if (error?.code === 'NETWORK_ERROR') return true
-    if (error?.code === 'TIMEOUT') return true
-    if (error?.status >= 500 && error?.status < 600) return true
+    if (err.code === 'NETWORK_ERROR') return true
+    if (err.code === 'TIMEOUT') return true
+    if (typeof err.status === 'number' && err.status >= 500 && err.status < 600) return true
     
     // Don't retry on client errors (4xx) or specific database errors
-    if (error?.status >= 400 && error?.status < 500) return false
-    if (error?.code === 'PGRST116') return false // Not found
-    if (error?.code === 'PGRST301') return false // Permission denied
+    if (typeof err.status === 'number' && err.status >= 400 && err.status < 500) return false
+    if (err.code === 'PGRST116') return false // Not found
+    if (err.code === 'PGRST301') return false // Permission denied
     
     // Default to retry for unknown errors
     return true
@@ -41,7 +45,7 @@ export async function withRetry<T>(
   options: RetryOptions = {}
 ): Promise<T> {
   const config = { ...DEFAULT_RETRY_OPTIONS, ...options }
-  let lastError: any
+  let lastError: unknown
   
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
     try {
@@ -79,7 +83,7 @@ export async function withRetry<T>(
 /**
  * Creates a retry wrapper for a specific function
  */
-export function createRetryWrapper<T extends (...args: any[]) => Promise<any>>(
+export function createRetryWrapper<T extends (...args: never[]) => Promise<unknown>>(
   fn: T,
   options: RetryOptions = {}
 ): T {

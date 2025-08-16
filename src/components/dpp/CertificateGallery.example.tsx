@@ -12,6 +12,8 @@ export function CertificateGalleryExample() {
       location: 'Gujarat, India',
       latitude: 23.0225,
       longitude: 72.5714,
+      brand_id: 'brand-1',
+      parent_supplier_id: '2',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
       certificates: [
@@ -51,6 +53,8 @@ export function CertificateGalleryExample() {
       location: 'Tamil Nadu, India',
       latitude: 11.1271,
       longitude: 78.6569,
+      brand_id: 'brand-1',
+      parent_supplier_id: '3',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
       certificates: [
@@ -80,6 +84,8 @@ export function CertificateGalleryExample() {
       location: 'Mumbai, India',
       latitude: 19.0760,
       longitude: 72.8777,
+      brand_id: 'brand-1',
+      parent_supplier_id: null,
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
       certificates: [] // No certificates for this supplier

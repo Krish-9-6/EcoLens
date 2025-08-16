@@ -25,7 +25,7 @@ export function useDppData(
   productId: string,
   options: UseDppDataOptions = {}
 ): UseDppDataResult {
-  const { retryOptions, autoFetch = true } = options
+  const { autoFetch = true } = options
   
   const [data, setData] = useState<DppData | null>(null)
   const [loading, setLoading] = useState(false)
