@@ -7,6 +7,8 @@ import { SupplyChainMap } from '<ecolens>/components/dpp/SupplyChainMap'
 import { CertificateGallery } from '<ecolens>/components/dpp/CertificateGallery'
 import { StickySubheader } from '<ecolens>/components/dpp/StickySubheader'
 import { SummaryRow } from '<ecolens>/components/dpp/SummaryRow'
+import { createClient } from '<ecolens>/lib/supabase/server' // Ensure this path is correct for your project
+import { redirect } from 'next/navigation'
 
 interface DppPageProps {
   params: Promise<{
@@ -57,6 +59,15 @@ export async function generateMetadata({ params }: DppPageProps): Promise<Metada
 
 export default async function DppPage({ params }: DppPageProps) {
   const { productId } = await params
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/auth/login')
+  }
   
   // Check if Supabase is configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

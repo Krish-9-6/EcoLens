@@ -24,14 +24,24 @@ export function StickySubheader({ className }: StickySubheaderProps) {
       )}
     >
       <div className="container mx-auto px-4">
-        <ul className="flex items-center gap-2 overflow-x-auto py-2">
-          <li><a className={linkBase} href="#product">Product</a></li>
-          <li><a className={linkBase} href="#summary">Summary</a></li>
-          <li><a className={linkBase} href="#journey">Journey</a></li>
-          <li><a className={linkBase} href="#map">Map</a></li>
-          <li><a className={linkBase} href="#certificates">Certificates</a></li>
-          <li><a className={linkBase} href="#qr">QR</a></li>
-        </ul>
+        <div className="flex items-center justify-between">
+          <ul className="flex items-center gap-2 overflow-x-auto py-2">
+            <li><a className={linkBase} href="#product">Product</a></li>
+            <li><a className={linkBase} href="#summary">Summary</a></li>
+            <li><a className={linkBase} href="#journey">Journey</a></li>
+            <li><a className={linkBase} href="#map">Map</a></li>
+            <li><a className={linkBase} href="#certificates">Certificates</a></li>
+            <li><a className={linkBase} href="#qr">QR</a></li>
+          </ul>
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              Logout
+            </button>
+          </form>
+        </div>
       </div>
     </nav>
   )

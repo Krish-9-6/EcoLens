@@ -42,7 +42,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                Track every step of your product's journey from raw materials to final assembly
+                Track every step of your product&#39;s journey from raw materials to final assembly
               </p>
             </CardContent>
           </Card>
