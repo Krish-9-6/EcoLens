@@ -1,5 +1,3 @@
-import { DppSkeleton } from '<ecolens>/components/dpp/DppSkeleton'
-
 export default function Loading() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

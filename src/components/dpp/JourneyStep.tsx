@@ -61,16 +61,16 @@ export function JourneyStep({ index, total, supplier, onViewCertificates, classN
       {/* Content */}
       <div className="flex-1 min-w-0 pt-1">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
             {supplier.name}
           </h3>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-white text-gray-700">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border bg-background text-foreground border-border">
             Tier {supplier.tier} • {tierLabel}
           </span>
           <button
             type="button"
             onClick={() => onViewCertificates?.(supplier.id)}
-            className="ml-auto inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="ml-auto inline-flex items-center px-2 py-0.5 text-xs rounded-full bg-muted text-foreground hover:bg-muted/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label={`View ${certCount} certificates for ${supplier.name}`}
           >
             {certCount} Cert{certCount === 1 ? "" : "s"}
@@ -78,11 +78,11 @@ export function JourneyStep({ index, total, supplier, onViewCertificates, classN
         </div>
 
         {/* Collapsible details using native details/summary for a11y */}
-        <details className="rounded-lg border bg-white">
-          <summary className="list-none cursor-pointer select-none px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg">
+        <details className="rounded-lg border bg-card border-border">
+          <summary className="list-none cursor-pointer select-none px-3 py-2 text-sm text-foreground hover:bg-muted rounded-lg">
             <span className="underline decoration-dotted">Details</span>
           </summary>
-          <div className="px-3 py-3 text-sm text-gray-600 border-t">
+          <div className="px-3 py-3 text-sm text-muted-foreground border-t border-border">
             <p><span className="font-medium">Location:</span> {supplier.location}</p>
             {supplier.certificates.length > 0 && (
               <p className="mt-1"><span className="font-medium">Certificates:</span> {supplier.certificates.length}</p>

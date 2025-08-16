@@ -3,12 +3,16 @@ import { notFound } from 'next/navigation'
 import { fetchDppData } from '<ecolens>/lib/data'
 import { ProductHeader } from '<ecolens>/components/dpp/ProductHeader'
 import { JourneyTimeline } from '<ecolens>/components/dpp/JourneyTimeline'
-import { SupplyChainMap } from '<ecolens>/components/dpp/SupplyChainMap'
+import { SupplyChainMapLazy } from '<ecolens>/components/dpp/SupplyChainMapLazy'
 import { CertificateGallery } from '<ecolens>/components/dpp/CertificateGallery'
 import { StickySubheader } from '<ecolens>/components/dpp/StickySubheader'
 import { SummaryRow } from '<ecolens>/components/dpp/SummaryRow'
-import { createClient } from '<ecolens>/lib/supabase/server' // Ensure this path is correct for your project
+import { DppErrorBoundary } from '<ecolens>/components/dpp/DppErrorBoundary'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '<ecolens>/components/ui/card'
+import { Badge } from '<ecolens>/components/ui/badge'
+import { MapPin, Shield, Clock, Users } from 'lucide-react'
 import { redirect } from 'next/navigation'
+import { createClient } from '<ecolens>/lib/supabase/server'
 
 interface DppPageProps {
   params: Promise<{
@@ -72,20 +76,24 @@ export default async function DppPage({ params }: DppPageProps) {
   // Check if Supabase is configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-2xl text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">⚠️ Configuration Required</h1>
-          <p className="text-gray-600 mb-4">
-            Supabase environment variables are not configured. Please set up your environment variables:
-          </p>
-          <div className="bg-gray-100 p-4 rounded-lg text-left text-sm font-mono">
-            <p>NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co</p>
-            <p>NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here</p>
-          </div>
-          <p className="text-gray-500 text-sm mt-4">
-            Copy the env.template file to .env.local and fill in your Supabase credentials.
-          </p>
-        </div>
+      <div className="min-h-screen bg-gradient-natural flex items-center justify-center p-4">
+        <Card className="max-w-2xl text-center shadow-elegant-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl font-heading font-bold text-destructive">⚠️ Configuration Required</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Supabase environment variables are not configured. Please set up your environment variables:
+            </p>
+            <div className="bg-muted p-4 rounded-lg text-left text-sm font-mono">
+              <p>NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co</p>
+              <p>NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here</p>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Copy the env.template file to .env.local and fill in your Supabase credentials.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -109,79 +117,148 @@ export default async function DppPage({ params }: DppPageProps) {
   const totalCertificates = allCerts.length
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <StickySubheader />
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Skip to content link for screen readers */}
-        <a 
-          href="#main-content" 
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50"
-        >
-          Skip to main content
-        </a>
+    <DppErrorBoundary>
+      <main className="min-h-screen bg-gradient-natural">
+        <StickySubheader />
+        <div className="container mx-auto px-4 py-8 space-y-12">
+          {/* Skip to content link for screen readers */}
+          <a 
+            href="#main-content" 
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg z-50 font-heading font-semibold shadow-elegant"
+          >
+            Skip to main content
+          </a>
 
-        {/* Product Header Section */}
-        <header className="w-full" id="product">
-          <div id="main-content" />
-          <ProductHeader 
-            productName={product.name}
-            brandName={product.brand.name}
-            imageUrl={product.image_url || undefined}
-            verifiedCount={verifiedCount}
-            totalCertificates={totalCertificates}
-          />
-        </header>
+          {/* Product Header Section */}
+          <header className="w-full" id="product">
+            <div id="main-content" />
+            <ProductHeader 
+              productName={product.name}
+              brandName={product.brand.name}
+              imageUrl={product.image_url || undefined}
+              verifiedCount={verifiedCount}
+              totalCertificates={totalCertificates}
+            />
+          </header>
 
-        {/* Summary Row */}
-        <SummaryRow
-          className=""
-          totalSuppliers={totalSuppliers}
-          tiersPresent={tiersPresent}
-          verifiedCount={verifiedCount}
-          totalCertificates={totalCertificates}
-          lastUpdatedISO={product.updated_at}
-        />
+          {/* Enhanced Summary Row with Stats Cards */}
+          <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="border-border shadow-elegant hover:shadow-elegant-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg font-heading">Suppliers</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-heading font-bold text-foreground">{totalSuppliers}</p>
+                <p className="text-sm text-muted-foreground mt-1">Total supply chain partners</p>
+              </CardContent>
+            </Card>
 
-        {/* Supply Chain Information Grid */}
-        <section 
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-          aria-labelledby="supply-chain-heading"
-        >
-          <h2 id="supply-chain-heading" className="sr-only">
-            Supply Chain Information
-          </h2>
-          
-          {/* Journey Timeline */}
-          <div className="w-full" id="journey">
-            <JourneyTimeline suppliers={suppliers} />
-          </div>
+            <Card className="border-border shadow-elegant hover:shadow-elegant-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg font-heading">Tiers</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-heading font-bold text-foreground">{tiersPresent.length}</p>
+                <p className="text-sm text-muted-foreground mt-1">Supply chain levels</p>
+              </CardContent>
+            </Card>
 
-          {/* Supply Chain Map */}
-          <section className="w-full" aria-labelledby="map-heading" id="map">
-            <div className="bg-white rounded-lg shadow-sm border">
-              <div className="p-6 border-b">
-                <h2 id="map-heading" className="text-xl font-semibold text-gray-900">
-                  Supply Chain Map
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Geographic locations of suppliers in the supply chain
+            <Card className="border-border shadow-elegant hover:shadow-elegant-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg font-heading">Verified</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-3xl font-heading font-bold text-foreground">{verifiedCount}</p>
+                <p className="text-sm text-muted-foreground mt-1">Blockchain verified</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border shadow-elegant hover:shadow-elegant-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg font-heading">Updated</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm font-heading font-semibold text-foreground">
+                  {new Date(product.updated_at).toLocaleDateString()}
                 </p>
-              </div>
-              <div className="p-6">
-                <SupplyChainMap suppliers={suppliers} />
+                <p className="text-sm text-muted-foreground mt-1">Last verification</p>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Supply Chain Information Grid */}
+          <section 
+            className="grid grid-cols-1 lg:grid-cols-2 gap-12"
+            aria-labelledby="supply-chain-heading"
+          >
+            <h2 id="supply-chain-heading" className="sr-only">
+              Supply Chain Information
+            </h2>
+            
+            {/* Journey Timeline */}
+            <div className="w-full" id="journey">
+              <Card className="border-border shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-heading">Supply Chain Journey</CardTitle>
+                  <CardDescription>
+                    Follow the complete journey from raw materials to finished product
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <JourneyTimeline suppliers={suppliers} />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Supply Chain Map */}
+            <section className="w-full" aria-labelledby="map-heading" id="map">
+              <Card className="border-border shadow-elegant">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-heading">Supply Chain Map</CardTitle>
+                  <CardDescription>
+                    Geographic locations of suppliers in the supply chain
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SupplyChainMapLazy suppliers={suppliers} />
+                </CardContent>
+              </Card>
+            </section>
+          </section>
+
+          {/* Proof of Provenance Section */}
+          <section id="certificates" className="space-y-6">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-heading font-bold text-foreground">Proof of Provenance</h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+                Every certificate and verification is immutably recorded on the blockchain, providing 
+                irrefutable proof of your product&apos;s journey and authenticity.
+              </p>
+              <div className="flex justify-center">
+                <Badge variant="verified" className="text-sm">
+                  {verifiedCount} of {totalCertificates} Certificates Verified
+                </Badge>
               </div>
             </div>
+            <CertificateGallery suppliers={suppliers} />
           </section>
-        </section>
 
-        {/* Certificates Section */}
-        <section id="certificates">
-          <CertificateGallery suppliers={suppliers} />
-        </section>
-
-        {/* QR anchor target reserved for future QR component */}
-        <div id="qr" />
-      </div>
-    </main>
+          {/* QR anchor target reserved for future QR component */}
+          <div id="qr" />
+        </div>
+      </main>
+    </DppErrorBoundary>
   )
 }

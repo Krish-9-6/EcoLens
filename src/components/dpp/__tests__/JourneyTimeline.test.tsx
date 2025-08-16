@@ -139,7 +139,7 @@ describe('JourneyTimeline', () => {
     });
 
     it('should apply correct color classes for different tiers', () => {
-      const { container } = render(<JourneyTimeline suppliers={mockSuppliers} />);
+      render(<JourneyTimeline suppliers={mockSuppliers} />);
       
       // Check for tier-specific color classes
       const tier3Badge = screen.getByText('Tier 3 • Raw Materials');
@@ -298,7 +298,7 @@ describe('JourneyTimeline', () => {
       const supplierWithNullCerts: SupplierWithCertificates[] = [
         {
           ...mockSuppliers[0],
-          certificates: null as any
+          certificates: null as never
         }
       ];
 
@@ -312,7 +312,7 @@ describe('JourneyTimeline', () => {
       const supplierWithInvalidTier: SupplierWithCertificates[] = [
         {
           ...mockSuppliers[0],
-          tier: 4 as any
+          tier: 4 as never
         }
       ];
 

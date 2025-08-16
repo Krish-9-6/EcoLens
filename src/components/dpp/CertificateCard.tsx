@@ -42,7 +42,7 @@ export function CertificateCard({
     return ledgerHash.length > 14 ? `${ledgerHash.slice(0, 6)}…${ledgerHash.slice(-6)}` : ledgerHash
   }, [ledgerHash])
 
-  const ribbon = isVerified ? "bg-gradient-to-b from-green-500 to-green-600" : "bg-gradient-to-b from-gray-400 to-gray-500"
+  const ribbon = isVerified ? "bg-gradient-to-b from-green-500 to-green-600" : "bg-gradient-to-b from-muted-foreground to-muted-foreground/80"
 
   const handleCopy = async () => {
     if (!ledgerHash) return
@@ -55,9 +55,9 @@ export function CertificateCard({
 
   return (
     <div className={twMerge(clsx(
-      "group relative rounded-xl border border-gray-200 bg-white overflow-hidden transition-all duration-200",
-      "hover:border-gray-300 hover:shadow-lg hover:shadow-gray-100 hover:-translate-y-0.5",
-      "focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2",
+      "group relative rounded-xl border border-border bg-card overflow-hidden transition-all duration-200",
+      "hover:border-border hover:shadow-lg hover:shadow-muted/20 hover:-translate-y-0.5",
+      "focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
       className
     ))}>
       {/* Left ribbon */}
@@ -65,11 +65,11 @@ export function CertificateCard({
 
       <div className="p-5 pl-6">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="flex-1 text-base font-semibold text-gray-900 leading-tight group-hover:text-gray-700 transition-colors">
+          <h3 className="flex-1 text-base font-semibold text-foreground leading-tight group-hover:text-foreground/80 transition-colors">
             {name}
           </h3>
           <time 
-            className="text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded-md shrink-0" 
+            className="text-xs text-muted-foreground font-medium bg-muted px-2 py-1 rounded-md shrink-0" 
             dateTime={issuedDateISO}
           >
             {issued}
@@ -77,17 +77,17 @@ export function CertificateCard({
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
             {type}
           </span>
           <button
             type="button"
             onClick={() => onFilterBySupplier?.(supplierName)}
-            className="inline-flex items-center px-2.5 py-1 rounded-full bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 text-xs font-medium text-gray-700 transition-all"
+            className="inline-flex items-center px-2.5 py-1 rounded-full bg-background border border-border hover:bg-muted hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 text-xs font-medium text-foreground transition-all"
             aria-label={`Filter by supplier ${supplierName}`}
             title={`Tier ${supplierTier}: ${supplierName}`}
           >
-            <span className="w-2 h-2 rounded-full bg-gray-400 mr-1.5" />
+            <span className="w-2 h-2 rounded-full bg-muted-foreground mr-1.5" />
             Tier {supplierTier}: {supplierName}
           </button>
           {isVerified && (
@@ -101,24 +101,24 @@ export function CertificateCard({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="text-xs text-gray-600 font-mono flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
-            <span aria-label="Ledger hash" className="text-gray-700">{truncatedHash}</span>
+          <div className="text-xs text-muted-foreground font-mono flex items-center gap-2 bg-muted px-3 py-2 rounded-lg">
+            <span aria-label="Ledger hash" className="text-foreground">{truncatedHash}</span>
             {ledgerHash && (
               <button
                 type="button"
-                className="p-1.5 rounded-md hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+                className="p-1.5 rounded-md hover:bg-muted/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
                 onClick={handleCopy}
                 aria-label="Copy full ledger hash"
                 title={copied ? "Copied!" : "Copy hash"}
               >
-                <Copy className="h-3.5 w-3.5 text-gray-500" />
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
           </div>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 text-xs text-blue-600 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded-lg px-3 py-2 hover:bg-blue-50 transition-all font-medium"
+            className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-lg px-3 py-2 hover:bg-primary/10 transition-all font-medium"
             aria-haspopup="dialog"
           >
             <Info className="h-3.5 w-3.5" /> View Details
@@ -135,65 +135,65 @@ export function CertificateCard({
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm grid place-items-center p-4"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="w-full max-w-lg rounded-xl bg-white shadow-2xl border border-gray-200 max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-              <h4 id={`cert-${id}-title`} className="text-lg font-semibold text-gray-900">{name}</h4>
+          <div className="w-full max-w-lg rounded-xl bg-card shadow-2xl border border-border max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/50">
+              <h4 id={`cert-${id}-title`} className="text-lg font-semibold text-foreground">{name}</h4>
               <button 
                 aria-label="Close" 
-                className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors" 
+                className="p-2 rounded-lg hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors" 
                 onClick={() => setOpen(false)}
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
-            <div className="p-6 space-y-4 text-sm text-gray-700 max-h-[60vh] overflow-y-auto">
+            <div className="p-6 space-y-4 text-sm text-muted-foreground max-h-[60vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900 mb-1">Supplier</p>
-                  <p className="text-gray-600">Tier {supplierTier} — {supplierName}</p>
+                  <p className="font-semibold text-foreground mb-1">Supplier</p>
+                  <p className="text-muted-foreground">Tier {supplierTier} — {supplierName}</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 mb-1">Type</p>
-                  <p className="text-gray-600">{type}</p>
+                  <p className="font-semibold text-foreground mb-1">Type</p>
+                  <p className="text-muted-foreground">{type}</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 mb-1">Issued</p>
-                  <p className="text-gray-600">
+                  <p className="font-semibold text-foreground mb-1">Issued</p>
+                  <p className="text-muted-foreground">
                     <time dateTime={issuedDateISO}>{issued}</time>
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-900 mb-1">Status</p>
-                  <p className="text-gray-600">
+                  <p className="font-semibold text-foreground mb-1">Status</p>
+                  <p className="text-muted-foreground">
                     {isVerified ? (
                       <span className="inline-flex items-center gap-1 text-green-700">
                         <CheckCircle2 className="h-4 w-4" />
                         Verified at {new Date(verifiedAtISO as string).toLocaleString()}
                       </span>
                     ) : (
-                      <span className="text-gray-500">Unverified</span>
+                      <span className="text-muted-foreground">Unverified</span>
                     )}
                   </p>
                 </div>
               </div>
               
               <div>
-                <p className="font-semibold text-gray-900 mb-2">Blockchain Ledger Hash</p>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  <div className="font-mono break-all text-xs text-gray-700 mb-2">
+                <p className="font-semibold text-foreground mb-2">Blockchain Ledger Hash</p>
+                <div className="bg-muted rounded-lg p-3 border border-border">
+                  <div className="font-mono break-all text-xs text-foreground mb-2">
                     {ledgerHash ?? '—'}
                   </div>
                   {ledgerHash && (
                     <div className="flex gap-2">
                       <button
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border bg-white hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border bg-background hover:bg-muted transition-colors"
                         onClick={handleCopy}
                       >
                         <Copy className="h-3 w-3" />
                         {copied ? 'Copied!' : 'Copy hash'}
                       </button>
                       <button
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border bg-white hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md border bg-background hover:bg-muted transition-colors"
                         onClick={() => window.open(`https://etherscan.io/tx/${ledgerHash}`, '_blank')}
                       >
                         <ExternalLink className="h-3 w-3" />
@@ -204,9 +204,9 @@ export function CertificateCard({
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+            <div className="px-6 py-4 border-t border-border bg-muted/50 flex justify-end">
               <button 
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors font-medium" 
+                className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors font-medium" 
                 onClick={() => setOpen(false)}
               >
                 Close

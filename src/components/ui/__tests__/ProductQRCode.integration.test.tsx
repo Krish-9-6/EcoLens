@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ProductQRCode from '../ProductQRCode';
+import { mockNodeEnv } from '../../../test/setup';
 
 // Mock react-qr-code with more detailed mock
 vi.mock('react-qr-code', () => ({
@@ -26,15 +27,6 @@ vi.mock('react-qr-code', () => ({
 }));
 
 describe('ProductQRCode Integration Tests', () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    process.env = originalEnv;
-  });
 
   describe('Environment-based URL Generation', () => {
     it('should generate correct URLs across different environments', () => {
@@ -62,7 +54,7 @@ describe('ProductQRCode Integration Tests', () => {
       ];
 
       testCases.forEach(({ env, vercelUrl, expected }) => {
-        process.env.NODE_ENV = env;
+        const restore = mockNodeEnv(env);
         if (vercelUrl) {
           process.env.NEXT_PUBLIC_VERCEL_URL = vercelUrl;
         } else {
@@ -75,6 +67,7 @@ describe('ProductQRCode Integration Tests', () => {
         expect(qrCode).toHaveAttribute('data-value', expected);
         
         unmount();
+        restore();
       });
     });
 
@@ -89,7 +82,7 @@ describe('ProductQRCode Integration Tests', () => {
       ];
 
       complexProductIds.forEach(productId => {
-        process.env.NODE_ENV = 'development';
+        const restore = mockNodeEnv('development');
         
         const { unmount } = render(<ProductQRCode productId={productId} />);
         
@@ -97,6 +90,7 @@ describe('ProductQRCode Integration Tests', () => {
         expect(qrCode).toHaveAttribute('data-value', `http://localhost:3000/dpp/${productId}`);
         
         unmount();
+        restore();
       });
     });
   });
@@ -204,7 +198,7 @@ describe('ProductQRCode Integration Tests', () => {
       ];
 
       testCases.forEach(({ env, productId, vercelUrl, expected }) => {
-        process.env.NODE_ENV = env;
+        const restore = mockNodeEnv(env);
         if (vercelUrl) {
           process.env.NEXT_PUBLIC_VERCEL_URL = vercelUrl;
         } else {
@@ -221,12 +215,13 @@ describe('ProductQRCode Integration Tests', () => {
         expect(screen.getByText(expected)).toBeInTheDocument();
         
         unmount();
+        restore();
       });
     });
 
     it('should handle very long URLs gracefully', () => {
       const longProductId = 'a'.repeat(200);
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId={longProductId} />);
       
@@ -238,6 +233,7 @@ describe('ProductQRCode Integration Tests', () => {
       // Should have break-all class for long URLs
       const urlElement = screen.getByText(expectedUrl);
       expect(urlElement).toHaveClass('break-all');
+      restore();
     });
   });
 
@@ -272,7 +268,7 @@ describe('ProductQRCode Integration Tests', () => {
 
   describe('Accessibility Integration', () => {
     it('should be accessible with screen readers', () => {
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId="test-product" />);
       
@@ -284,6 +280,7 @@ describe('ProductQRCode Integration Tests', () => {
       // Container should be properly structured
       const container = url.closest('.inline-block');
       expect(container).toBeInTheDocument();
+      restore();
     });
 
     it('should work with different contrast requirements', () => {

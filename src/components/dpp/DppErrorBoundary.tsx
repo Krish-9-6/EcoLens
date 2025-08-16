@@ -32,7 +32,7 @@ export function DppErrorBoundary({ children, componentName }: DppErrorBoundaryPr
             {componentName ? `${componentName} Error` : 'Component Error'}
           </h3>
           <p className="text-red-700 mb-4">
-            This section of the digital passport couldn't load properly. 
+            This section of the digital passport couldn&apos;t load properly. 
             The rest of the page should still work normally.
           </p>
           <div className="flex gap-3">

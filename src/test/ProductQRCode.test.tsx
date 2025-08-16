@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ProductQRCode from '../components/ui/ProductQRCode';
+import { mockNodeEnv } from './setup';
 
 // Mock react-qr-code since it's a visual component
 vi.mock('react-qr-code', () => ({
@@ -19,55 +20,48 @@ vi.mock('react-qr-code', () => ({
 }));
 
 describe('ProductQRCode', () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    // Reset environment variables before each test
-    process.env = { ...originalEnv };
-  });
-
-  afterEach(() => {
-    // Restore original environment variables
-    process.env = originalEnv;
-  });
 
   describe('URL Generation', () => {
     it('should generate localhost URL in development environment', () => {
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId="test-product-123" />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', 'http://localhost:3000/dpp/test-product-123');
+      restore();
     });
 
     it('should generate production URL with NEXT_PUBLIC_VERCEL_URL', () => {
-      process.env.NODE_ENV = 'production';
+      const restore = mockNodeEnv('production');
       process.env.NEXT_PUBLIC_VERCEL_URL = 'ecolens-production.vercel.app';
       
       render(<ProductQRCode productId="test-product-456" />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', 'https://ecolens-production.vercel.app/dpp/test-product-456');
+      restore();
     });
 
     it('should fallback to default production domain when NEXT_PUBLIC_VERCEL_URL is not set', () => {
-      process.env.NODE_ENV = 'production';
+      const restore = mockNodeEnv('production');
       delete process.env.NEXT_PUBLIC_VERCEL_URL;
       
       render(<ProductQRCode productId="test-product-789" />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', 'https://ecolens.vercel.app/dpp/test-product-789');
+      restore();
     });
 
     it('should handle special characters in product ID', () => {
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId="test-product-with-special-chars_123" />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', 'http://localhost:3000/dpp/test-product-with-special-chars_123');
+      restore();
     });
   });
 
@@ -121,13 +115,14 @@ describe('ProductQRCode', () => {
     });
 
     it('should display the URL below the QR code', () => {
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId="test-product" />);
       
       const urlDisplay = screen.getByText('http://localhost:3000/dpp/test-product');
       expect(urlDisplay).toBeInTheDocument();
       expect(urlDisplay).toHaveClass('mt-2', 'text-xs', 'text-gray-600', 'text-center', 'font-mono', 'break-all');
+      restore();
     });
   });
 
@@ -146,22 +141,24 @@ describe('ProductQRCode', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty product ID', () => {
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId="" />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', 'http://localhost:3000/dpp/');
+      restore();
     });
 
     it('should handle very long product IDs', () => {
       const longProductId = 'a'.repeat(100);
-      process.env.NODE_ENV = 'development';
+      const restore = mockNodeEnv('development');
       
       render(<ProductQRCode productId={longProductId} />);
       
       const qrCode = screen.getByTestId('qr-code');
       expect(qrCode).toHaveAttribute('data-value', `http://localhost:3000/dpp/${longProductId}`);
+      restore();
     });
   });
 });

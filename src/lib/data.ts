@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Database, SupplierWithCertificates } from './types'
+import type { Database, Product, ProductWithSuppliers, SupplierWithHierarchy, Supplier, DppData, ProductQueryResult } from './types'
 
 // Create Supabase client for server-side operations
 const createServerClient = () => {
@@ -109,13 +109,16 @@ export async function fetchDppData(productId: string): Promise<DppData | null> {
     }
 
     // Transform the data into the expected DPP structure
-    const suppliers = (suppliersData || []).map(item => {
-      const supplier = item.suppliers as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const suppliers = (suppliersData || []).map((item: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supplier = (item as any).suppliers
       return {
         ...supplier,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         certificates: (supplier.certificates || []).map((cert: any) => ({
           id: cert.id,
-          supplier_id: supplier.id, // Add the missing supplier_id field
+          supplier_id: supplier.id,
           name: cert.name,
           type: cert.type,
           issued_date: cert.issued_date,
@@ -139,6 +142,7 @@ export async function fetchDppData(productId: string): Promise<DppData | null> {
     const dppData: DppData = {
       product: {
         ...productData,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         brand: (productData as any).brands
       },
       suppliers
@@ -172,21 +176,161 @@ export function isValidUuid(uuid: string): boolean {
   return uuidRegex.test(uuid)
 }
 
-// Type definitions for the DPP data structure
-export interface DppData {
-  product: {
-    id: string
-    name: string
-    image_url: string | null
-    brand_id: string
-    created_at: string
-    updated_at: string
-    brand: {
-      id: string
-      name: string
-      created_at: string
-      updated_at: string
-    }
+/**
+ * Fetches a single product with all associated suppliers for dashboard management
+ * @param productId - The UUID of the product to fetch
+ * @param brandId - The UUID of the brand (for security validation)
+ * @returns Promise<ProductWithSuppliers | null> - Product with suppliers or null if not found
+ */
+export async function fetchProductWithSuppliers(productId: string, brandId: string): Promise<ProductWithSuppliers | null> {
+  // Validate productId format (basic UUID validation)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(productId) || !uuidRegex.test(brandId)) {
+    console.error('Invalid ID format:', { productId, brandId })
+    return null
   }
-  suppliers: SupplierWithCertificates[]
+
+  try {
+    const supabase = createServerClient()
+
+    // Fetch product with brand information
+    const { data: productData, error: productError } = await supabase
+      .from('products')
+      .select(`
+        id,
+        name,
+        image_url,
+        brand_id,
+        created_at,
+        updated_at,
+        brands!inner (
+          id,
+          name,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('id', productId)
+      .eq('brand_id', brandId)
+      .single()
+
+    if (productError) {
+      if (productError.code === 'PGRST116') {
+        console.log('Product not found or access denied:', productId)
+        return null
+      }
+      throw productError
+    }
+
+    if (!productData) {
+      console.log('No product data returned for:', productId)
+      return null
+    }
+
+    // Fetch all suppliers associated with this product
+    const { data: suppliersData, error: suppliersError } = await supabase
+      .from('product_suppliers')
+      .select(`
+        suppliers!inner (
+          id,
+          name,
+          tier,
+          location,
+          latitude,
+          longitude,
+          brand_id,
+          parent_supplier_id,
+          created_at,
+          updated_at
+        )
+      `)
+      .eq('product_id', productId)
+
+    if (suppliersError) {
+      console.error('Error fetching suppliers:', suppliersError)
+      throw suppliersError
+    }
+
+    // Transform suppliers data and build hierarchy
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const suppliers = (suppliersData || []).map((item: any) => item.suppliers as Supplier)
+    
+    // Build supplier hierarchy with parent-child relationships
+    const suppliersWithHierarchy: SupplierWithHierarchy[] = suppliers.map(supplier => {
+      const parent = suppliers.find(s => s.id === supplier.parent_supplier_id) || null
+      const children = suppliers.filter(s => s.parent_supplier_id === supplier.id)
+      
+      return {
+        ...supplier,
+        parent,
+        children: children.length > 0 ? children : undefined
+      }
+    })
+
+    // Sort suppliers by tier for consistent display
+    suppliersWithHierarchy.sort((a, b) => a.tier - b.tier)
+
+    const productWithSuppliers: ProductWithSuppliers = {
+      ...productData,
+      brand: (productData as ProductQueryResult).brands,
+      suppliers: suppliersWithHierarchy
+    }
+
+    console.log(`Successfully fetched product with suppliers: ${productId}`)
+    return productWithSuppliers
+
+  } catch (error) {
+    console.error('Error fetching product with suppliers:', {
+      productId,
+      brandId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    
+    return null
+  }
 }
+
+/**
+ * Fetches all products for a specific brand (dashboard context)
+ * @param brandId - The UUID of the brand to fetch products for
+ * @returns Promise<Product[]> - Array of products belonging to the brand
+ */
+export async function fetchBrandProducts(brandId: string): Promise<Product[]> {
+  // Validate brandId format (basic UUID validation)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(brandId)) {
+    console.error('Invalid brand ID format:', brandId)
+    return []
+  }
+
+  try {
+    const supabase = createServerClient()
+
+    // Fetch products for the specific brand
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching brand products:', error)
+      throw error
+    }
+
+    console.log(`Successfully fetched ${products?.length || 0} products for brand: ${brandId}`)
+    return products || []
+
+  } catch (error) {
+    console.error('Error fetching brand products:', {
+      brandId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+    
+    // Return empty array for graceful UI handling
+    return []
+  }
+}
+

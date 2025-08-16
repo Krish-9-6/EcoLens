@@ -75,7 +75,7 @@ export function trackWebVitals() {
     const entries = list.getEntries();
     entries.forEach((entry) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log('FID:', (entry as any).processingStart - entry.startTime);
+        console.log('FID:', (entry as PerformanceEntry & { processingStart: number }).processingStart - entry.startTime);
       }
     });
   }).observe({ entryTypes: ['first-input'] });
@@ -85,8 +85,9 @@ export function trackWebVitals() {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     entries.forEach((entry) => {
-      if (!(entry as any).hadRecentInput) {
-        clsValue += (entry as any).value;
+      const layoutShiftEntry = entry as PerformanceEntry & { hadRecentInput?: boolean; value: number }
+      if (!layoutShiftEntry.hadRecentInput) {
+        clsValue += layoutShiftEntry.value;
       }
     });
     

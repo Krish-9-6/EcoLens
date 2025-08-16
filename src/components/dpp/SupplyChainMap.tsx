@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import type { SupplierWithCertificates } from '<ecolens>/lib/types'
 import { MapErrorFallback } from './ErrorFallbacks'
-import type { Icon, LatLngExpression, Map as LeafletMap } from 'leaflet'
+import type { LatLngExpression, Map as LeafletMap } from 'leaflet'
 
 // React Leaflet components
 const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false })
@@ -21,12 +21,16 @@ interface SupplyChainMapProps {
 interface MapBounds { center: [number, number]; zoom: number }
 
 interface CustomIcons {
-  tier3Icon: Icon
-  tier2Icon: Icon
-  tier1Icon: Icon
+  tier3Icon: unknown
+  tier2Icon: unknown
+  tier1Icon: unknown
 }
 
 const LIGHT_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+
+// Global map instance tracking
+let globalMapInstance: LeafletMap | null = null
+let globalMapContainerId: string | null = null
 
 export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
   const [isClient, setIsClient] = useState(false)
@@ -35,8 +39,12 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
   const [markerIcon, setMarkerIcon] = useState<CustomIcons | null>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [usingDemoCoords, setUsingDemoCoords] = useState(false)
+  const [isMapInitialized, setIsMapInitialized] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<LeafletMap | null>(null)
+  const intersectionObserverRef = useRef<IntersectionObserver | null>(null)
+  const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const mapContainerId = useRef<string>(`map-${Math.random().toString(36).substr(2, 9)}`)
 
   const suppliersWithCoordinates = useMemo(
     () => {
@@ -66,105 +74,141 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
     [suppliers]
   )
 
-  useEffect(() => { setIsClient(true); setMapError(null) }, [])
+  // Initialize client-side rendering
+  useEffect(() => { 
+    setIsClient(true)
+    setMapError(null)
+  }, [])
+
+  // Cleanup function for intersection observer and timers
+  const cleanup = useCallback(() => {
+    if (intersectionObserverRef.current) {
+      intersectionObserverRef.current.disconnect()
+      intersectionObserverRef.current = null
+    }
+    if (fallbackTimerRef.current) {
+      clearTimeout(fallbackTimerRef.current)
+      fallbackTimerRef.current = null
+    }
+  }, [])
 
   // Defer render until visible
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || isMapInitialized) return
     
     const io = new IntersectionObserver((entries) => {
       const e = entries[0]
       if (e?.isIntersecting) {
         console.log('Map is now visible, setting isVisible to true')
         setIsVisible(true)
+        setIsMapInitialized(true)
       }
     }, { 
       rootMargin: '200px',
       threshold: 0.1 
     })
     
+    intersectionObserverRef.current = io
     io.observe(containerRef.current)
     
     // Fallback: if IntersectionObserver doesn't trigger within 3 seconds, show the map anyway
-    const fallbackTimer = setTimeout(() => {
+    fallbackTimerRef.current = setTimeout(() => {
       console.log('Fallback: forcing map to be visible after 3 seconds')
       setIsVisible(true)
+      setIsMapInitialized(true)
     }, 3000)
     
-    return () => {
-      io.disconnect()
-      clearTimeout(fallbackTimer)
-    }
-  }, [])
+    return cleanup
+  }, [isMapInitialized, cleanup])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return cleanup
+  }, [cleanup])
 
   // Debug logging
   useEffect(() => {
     console.log('SupplyChainMap state:', {
       isClient,
       isVisible,
+      isMapInitialized,
       suppliersCount: suppliers.length,
       suppliersWithCoordinatesCount: suppliersWithCoordinates.length,
       usingDemoCoords,
       mapError: mapError?.message
     })
-  }, [isClient, isVisible, suppliers.length, suppliersWithCoordinates.length, usingDemoCoords, mapError])
+  }, [isClient, isVisible, isMapInitialized, suppliers.length, suppliersWithCoordinates.length, usingDemoCoords, mapError])
 
-  // Icon
+  // Icon creation with proper cleanup
   useEffect(() => {
     if (!isClient) return
+    
     let cancelled = false
-    ;(async () => {
-      const L = await import('leaflet')
-      
-      // Create custom markers for each tier
-      const createCustomIcon = (tier: number) => {
-        const colors = {
-          3: { bg: '#10b981', border: '#059669' }, // green
-          2: { bg: '#f59e0b', border: '#d97706' }, // orange
-          1: { bg: '#ef4444', border: '#dc2626' }  // red
-        }
-        const color = colors[tier as keyof typeof colors] || colors[1]
+    
+    const createIcons = async () => {
+      try {
+        const L = await import('leaflet')
         
-        return new L.DivIcon({
-          className: 'custom-marker',
-          html: `
-            <div style="
-              width: 24px;
-              height: 24px;
-              background: ${color.bg};
-              border: 2px solid ${color.border};
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-              color: white;
-              font-weight: bold;
-              font-size: 10px;
-              text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            ">
-              ${tier}
-            </div>
-          `,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-          popupAnchor: [0, -12]
-        })
+        // Create custom markers for each tier
+        const createCustomIcon = (tier: number) => {
+          const colors = {
+            3: { bg: '#10b981', border: '#059669' }, // green
+            2: { bg: '#f59e0b', border: '#d97706' }, // orange
+            1: { bg: '#ef4444', border: '#dc2626' }  // red
+          }
+          const color = colors[tier as keyof typeof colors] || colors[1]
+          
+          return new L.DivIcon({
+            className: 'custom-marker',
+            html: `
+              <div style="
+                width: 24px;
+                height: 24px;
+                background: ${color.bg};
+                border: 2px solid ${color.border};
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                color: white;
+                font-weight: bold;
+                font-size: 10px;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+              ">
+                ${tier}
+              </div>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+          })
+        }
+        
+        // Create tier-specific icons
+        const tier3Icon = createCustomIcon(3)
+        const tier2Icon = createCustomIcon(2)
+        const tier1Icon = createCustomIcon(1)
+        
+        if (!cancelled) {
+          setMarkerIcon({ tier3Icon, tier2Icon, tier1Icon })
+        }
+      } catch (error) {
+        console.error('Error creating map icons:', error)
+        if (!cancelled) {
+          setMapError(error instanceof Error ? error : new Error('Failed to create map icons'))
+        }
       }
-      
-      // Create tier-specific icons
-      const tier3Icon = createCustomIcon(3)
-      const tier2Icon = createCustomIcon(2)
-      const tier1Icon = createCustomIcon(1)
-      
-      if (!cancelled) {
-        setMarkerIcon({ tier3Icon, tier2Icon, tier1Icon })
-      }
-    })()
-    return () => { cancelled = true }
+    }
+    
+    createIcons()
+    
+    return () => { 
+      cancelled = true 
+    }
   }, [isClient])
 
-  // Bounds
+  // Calculate bounds
   useEffect(() => {
     if (suppliersWithCoordinates.length === 0) return
     const next = calculateMapBounds(suppliersWithCoordinates)
@@ -190,13 +234,42 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
     return () => window.removeEventListener('timeline-hover', onHover as EventListener)
   }, [suppliersWithCoordinates])
 
-  const fitToSuppliers = () => {
+  const fitToSuppliers = useCallback(() => {
     if (!mapRef.current || suppliersWithCoordinates.length === 0) return
     const next = calculateMapBounds(suppliersWithCoordinates)
     mapRef.current.setView(next.center as LatLngExpression, next.zoom, { animate: true })
-  }
+  }, [suppliersWithCoordinates])
+
+  // Handle map initialization with global tracking
+  const handleMapRef = useCallback((map: LeafletMap | null) => {
+    if (map) {
+      // Check if there's already a global map instance
+      if (globalMapInstance && globalMapContainerId !== mapContainerId.current) {
+        console.warn('Multiple map instances detected, cleaning up previous instance')
+        try {
+          globalMapInstance.remove()
+        } catch (error) {
+          console.error('Error removing previous map instance:', error)
+        }
+      }
+      
+      globalMapInstance = map
+      globalMapContainerId = mapContainerId.current
+      mapRef.current = map
+      
+      console.log('Map initialized successfully:', mapContainerId.current)
+    } else {
+      // Map is being unmounted
+      if (globalMapInstance && globalMapContainerId === mapContainerId.current) {
+        globalMapInstance = null
+        globalMapContainerId = null
+      }
+      mapRef.current = null
+    }
+  }, [])
 
   if (mapError) return <MapErrorFallback onRetry={() => { setMapError(null); setIsClient(false); setTimeout(() => setIsClient(true), 100) }} className="w-full h-96" />
+  
   if (!isClient) return (
     <div className="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 grid place-items-center">
       <div className="text-center">
@@ -207,6 +280,7 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
       </div>
     </div>
   )
+  
   if (!isVisible) return (
     <div ref={containerRef} className="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 grid place-items-center">
       <div className="text-center">
@@ -217,7 +291,10 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
         </div>
         <p className="text-gray-600 font-medium mb-4">Map will load when visible</p>
         <button 
-          onClick={() => setIsVisible(true)}
+          onClick={() => {
+            setIsVisible(true)
+            setIsMapInitialized(true)
+          }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 transition-colors font-medium"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,6 +305,7 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
       </div>
     </div>
   )
+  
   if (suppliersWithCoordinates.length === 0) return (
     <div ref={containerRef} className="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300 grid place-items-center">
       <div className="text-center">
@@ -267,13 +345,12 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
       </div>
 
       <MapContainer 
+        key={`map-${mapContainerId.current}-${isMapInitialized ? 'initialized' : 'loading'}`}
         center={mapBounds.center} 
         zoom={mapBounds.zoom} 
         style={{ height: '100%', width: '100%' }} 
         className="z-0" 
-        ref={(map) => {
-          if (map) mapRef.current = map
-        }}
+        ref={handleMapRef}
       >
         <TileLayer 
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
@@ -297,7 +374,7 @@ export function SupplyChainMap({ suppliers }: SupplyChainMapProps) {
                           markerIcon.tier1Icon
               
               return (
-                <Marker key={s.id} position={[s.latitude!, s.longitude!] as LatLngExpression} icon={icon}>
+                <Marker key={s.id} position={[s.latitude!, s.longitude!] as LatLngExpression} icon={icon as React.ComponentProps<typeof Marker>['icon']}>
                   <Popup className="supplier-popup">
                     <div className="p-3 min-w-[220px]">
                       <div className="font-semibold text-gray-900 mb-2 text-base">{s.name}</div>

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Filter, SortAsc, SortDesc, CheckCircle2, XCircle } from "lucide-react"
+import { Filter, CheckCircle2, XCircle } from "lucide-react"
 import type { SupplierWithCertificates } from "<ecolens>/lib/types"
 import { CertificateCard } from "./CertificateCard"
 
@@ -74,13 +74,13 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
   if (all.length === 0) {
     return (
       <section className="w-full" aria-labelledby="certificates-heading">
-        <h2 id="certificates-heading" className="text-2xl font-bold mb-6">Certificates & Verifications</h2>
-        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-          <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <CheckCircle2 className="h-6 w-6 text-gray-400" />
+        <h2 id="certificates-heading" className="text-2xl font-bold mb-6 text-foreground">Certificates & Verifications</h2>
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-gray-600 font-medium">No certificates available for this product.</p>
-          <p className="text-sm text-gray-500 mt-1">Certificates will appear here once they are added to the supply chain.</p>
+          <p className="text-muted-foreground font-medium">No certificates available for this product.</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Certificates will appear here once they are added to the supply chain.</p>
         </div>
       </section>
     );
@@ -89,11 +89,11 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
   return (
     <section className="w-full" aria-labelledby="certificates-heading">
       <div className="flex items-center justify-between mb-6">
-        <h2 id="certificates-heading" className="text-2xl font-bold text-gray-900">
+        <h2 id="certificates-heading" className="text-2xl font-bold text-foreground">
           Certificates & Verifications
         </h2>
         {isClient && (
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             {filtered.length} of {all.length} certificates
           </div>
         )}
@@ -101,14 +101,14 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
 
       {/* Enhanced Filters - Only show on client side */}
       {isClient && (
-        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="mb-6 p-4 bg-muted/50 rounded-xl border border-border">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-4 w-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">Filters</span>
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">Filters</span>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 transition-colors"
+                className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
               >
                 <XCircle className="h-3 w-3" />
                 Clear all
@@ -118,9 +118,9 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-xs font-medium text-foreground mb-1">Status</label>
               <select
-                className="w-full h-9 rounded-lg border border-gray-300 px-3 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full h-9 rounded-lg border border-border px-3 text-sm bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                 value={filterVerified ?? ''}
                 onChange={(e) => updateParams({ verified: e.target.value || null })}
                 aria-label="Filter by verification status"
@@ -132,9 +132,9 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-xs font-medium text-foreground mb-1">Type</label>
               <select
-                className="w-full h-9 rounded-lg border border-gray-300 px-3 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full h-9 rounded-lg border border-border px-3 text-sm bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                 value={filterType}
                 onChange={(e) => updateParams({ type: e.target.value || null })}
                 aria-label="Filter by certificate type"
@@ -145,9 +145,9 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Supplier</label>
+              <label className="block text-xs font-medium text-foreground mb-1">Supplier</label>
               <select
-                className="w-full h-9 rounded-lg border border-gray-300 px-3 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full h-9 rounded-lg border border-border px-3 text-sm bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                 value={filterSupplier}
                 onChange={(e) => updateParams({ supplier: e.target.value || null })}
                 aria-label="Filter by supplier"
@@ -158,9 +158,9 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Sort by</label>
+              <label className="block text-xs font-medium text-foreground mb-1">Sort by</label>
               <select
-                className="w-full h-9 rounded-lg border border-gray-300 px-3 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full h-9 rounded-lg border border-border px-3 text-sm bg-background focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
                 value={sort}
                 onChange={(e) => updateParams({ sort: e.target.value })}
                 aria-label="Sort certificates"
@@ -174,36 +174,36 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
 
           {/* Active filter pills */}
           {hasActiveFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-border">
               <div className="flex flex-wrap gap-2">
                 {filterVerified && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     {filterVerified === 'true' ? 'Verified' : 'Unverified'}
                     <button
                       onClick={() => updateParams({ verified: null })}
-                      className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                     >
                       <XCircle className="h-3 w-3" />
                     </button>
                   </span>
                 )}
                 {filterType && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     Type: {filterType}
                     <button
                       onClick={() => updateParams({ type: null })}
-                      className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                     >
                       <XCircle className="h-3 w-3" />
                     </button>
                   </span>
                 )}
                 {filterSupplier && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
                     Supplier: {filterSupplier}
                     <button
                       onClick={() => updateParams({ supplier: null })}
-                      className="hover:bg-purple-200 rounded-full p-0.5 transition-colors"
+                      className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                     >
                       <XCircle className="h-3 w-3" />
                     </button>
@@ -235,17 +235,17 @@ export function CertificateGallery({ suppliers }: CertificateGalleryProps) {
 
       {/* Enhanced Empty State */}
       {isClient && filtered.length === 0 && (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-8 text-center">
-          <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <Filter className="h-6 w-6 text-gray-400" />
+        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Filter className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No certificates found</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-2">No certificates found</h3>
+          <p className="text-muted-foreground mb-4">
             No certificates match the selected filters. Try adjusting your search criteria.
           </p>
           <button
             onClick={clearFilters}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
           >
             <XCircle className="h-4 w-4" />
             Clear all filters
