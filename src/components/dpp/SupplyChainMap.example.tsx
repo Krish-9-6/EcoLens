@@ -10,6 +10,8 @@ const exampleSuppliers: SupplierWithCertificates[] = [
     location: 'Texas, USA',
     latitude: 32.7767,
     longitude: -96.7970,
+    brand_id: 'brand-1',
+    parent_supplier_id: '2',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     certificates: [
@@ -39,6 +41,8 @@ const exampleSuppliers: SupplierWithCertificates[] = [
     location: 'Mumbai, India',
     latitude: 19.0760,
     longitude: 72.8777,
+    brand_id: 'brand-1',
+    parent_supplier_id: '3',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     certificates: [
@@ -61,6 +65,8 @@ const exampleSuppliers: SupplierWithCertificates[] = [
     location: 'Ho Chi Minh City, Vietnam',
     latitude: 10.8231,
     longitude: 106.6297,
+    brand_id: 'brand-1',
+    parent_supplier_id: null,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     certificates: []
@@ -75,6 +81,8 @@ const suppliersWithoutCoordinates: SupplierWithCertificates[] = [
     location: 'Unknown Location',
     latitude: null,
     longitude: null,
+    brand_id: 'brand-1',
+    parent_supplier_id: null,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     certificates: []

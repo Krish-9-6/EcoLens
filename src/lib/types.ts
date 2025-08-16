@@ -17,7 +17,7 @@ export interface Database {
           id?: string
           name: string
           image_url?: string | null
-          brand_id: string
+          brand_id?: string  // Made optional since it can be set by trigger
           created_at?: string
           updated_at?: string
         }
@@ -25,6 +25,25 @@ export interface Database {
           id?: string
           name?: string
           image_url?: string | null
+          brand_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      profiles: {
+        Row: {
+          id: string
+          brand_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          brand_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
           brand_id?: string
           created_at?: string
           updated_at?: string
@@ -58,6 +77,8 @@ export interface Database {
           location: string
           latitude: number | null
           longitude: number | null
+          brand_id: string
+          parent_supplier_id: string | null
           created_at: string
           updated_at: string
         }
@@ -68,6 +89,8 @@ export interface Database {
           location: string
           latitude?: number | null
           longitude?: number | null
+          brand_id?: string  // Made optional since it can be set by trigger
+          parent_supplier_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -78,6 +101,8 @@ export interface Database {
           location?: string
           latitude?: number | null
           longitude?: number | null
+          brand_id?: string
+          parent_supplier_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -177,6 +202,7 @@ export type Supplier = Database['public']['Tables']['suppliers']['Row']
 export type Certificate = Database['public']['Tables']['certificates']['Row']
 export type LedgerEntry = Database['public']['Tables']['ledger']['Row']
 export type ProductSupplier = Database['public']['Tables']['product_suppliers']['Row']
+export type Profile = Database['public']['Tables']['profiles']['Row']
 
 // Composite types for DPP data structure
 export interface DppData {
@@ -236,4 +262,21 @@ export interface SupabaseError {
   message: string
   details?: string
   hint?: string
+}
+
+// Brand Dashboard specific types
+export interface SupplierWithHierarchy extends Supplier {
+  children?: SupplierWithHierarchy[]
+  parent?: Supplier | null
+}
+
+export interface ProductWithSuppliers extends Product {
+  brand: Brand
+  suppliers: SupplierWithHierarchy[]
+}
+
+// Form state type for Server Actions
+export type FormState = {
+  errors?: { [key: string]: string[] | undefined }
+  message?: string | null
 }

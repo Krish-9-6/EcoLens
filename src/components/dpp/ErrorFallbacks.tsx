@@ -13,7 +13,7 @@ export function NetworkErrorFallback({ onRetry, className }: ErrorFallbackProps)
         Connection Problem
       </h3>
       <p className="text-orange-700 text-center mb-4 max-w-md">
-        We're having trouble connecting to our servers. Please check your internet connection and try again.
+        We&apos;re having trouble connecting to our servers. Please check your internet connection and try again.
       </p>
       {onRetry && (
         <button
@@ -36,7 +36,7 @@ export function DatabaseErrorFallback({ onRetry, className }: ErrorFallbackProps
         Data Unavailable
       </h3>
       <p className="text-red-700 text-center mb-4 max-w-md">
-        We're experiencing technical difficulties accessing the product data. Please try again in a moment.
+        We&apos;re experiencing technical difficulties accessing the product data. Please try again in a moment.
       </p>
       {onRetry && (
         <button
@@ -59,7 +59,7 @@ export function MapErrorFallback({ onRetry, className }: ErrorFallbackProps) {
         Map Unavailable
       </h3>
       <p className="text-blue-700 text-center mb-4 max-w-md">
-        The interactive map couldn't load. You can still view supplier locations in the timeline above.
+        The interactive map couldn&apos;t load. You can still view supplier locations in the timeline above.
       </p>
       {onRetry && (
         <button

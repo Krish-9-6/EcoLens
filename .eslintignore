@@ -1,0 +1,30 @@
+# Test files
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Test setup files
+**/test/**
+**/vitest.config.ts
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env*
+!.env.example
+
+# Generated files
+*.d.ts
+*.min.js
+
+# Documentation
+*.md

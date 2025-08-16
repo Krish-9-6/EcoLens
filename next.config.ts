@@ -20,39 +20,15 @@ const nextConfig: NextConfig = {
   // Bundle optimization
   experimental: {
     // Enable optimized package imports
-    optimizePackageImports: ['lucide-react', 'react-leaflet'],
+    optimizePackageImports: ['lucide-react', 'react-leaflet', 'framer-motion'],
   },
   
-  // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    // Optimize bundle size in production
-    if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...config.optimization.splitChunks,
-          cacheGroups: {
-            ...config.optimization.splitChunks?.cacheGroups,
-            // Separate chunk for map components (lazy loaded)
-            map: {
-              name: 'map',
-              test: /[\\/]node_modules[\\/](leaflet|react-leaflet)[\\/]/,
-              chunks: 'all',
-              priority: 10,
-            },
-            // Separate chunk for UI components
-            ui: {
-              name: 'ui',
-              test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
-              chunks: 'all',
-              priority: 5,
-            },
-          },
-        },
-      };
-    }
-    
-    return config;
+  // Turbopack configuration (stable)
+  turbopack: {
+    // Configure module resolution for Turbopack
+    resolveAlias: {
+      // Add any module aliases if needed
+    },
   },
 };
 
