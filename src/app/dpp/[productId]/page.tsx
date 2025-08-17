@@ -1,12 +1,12 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { fetchDppData } from '<ecolens>/lib/data'
+import { requireAuth } from '<ecolens>/lib/auth'
 import { ProductHeader } from '<ecolens>/components/dpp/ProductHeader'
 import { JourneyTimeline } from '<ecolens>/components/dpp/JourneyTimeline'
 import { SupplyChainMapLazy } from '<ecolens>/components/dpp/SupplyChainMapLazy'
 import { CertificateGallery } from '<ecolens>/components/dpp/CertificateGallery'
 import { StickySubheader } from '<ecolens>/components/dpp/StickySubheader'
-import { SummaryRow } from '<ecolens>/components/dpp/SummaryRow'
 import { DppErrorBoundary } from '<ecolens>/components/dpp/DppErrorBoundary'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '<ecolens>/components/ui/card'
 import { Badge } from '<ecolens>/components/ui/badge'
@@ -61,6 +61,9 @@ export async function generateMetadata({ params }: DppPageProps): Promise<Metada
 
 export default async function DppPage({ params }: DppPageProps) {
   const { productId } = await params
+  
+  // This will redirect to login if not authenticated
+  await requireAuth()
   
   // Check if Supabase is configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -233,7 +236,7 @@ export default async function DppPage({ params }: DppPageProps) {
               <h2 className="text-3xl font-heading font-bold text-foreground">Proof of Provenance</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 Every certificate and verification is immutably recorded on the blockchain, providing 
-                irrefutable proof of your product's journey and authenticity.
+                irrefutable proof of your product&apos;s journey and authenticity.
               </p>
               <div className="flex justify-center">
                 <Badge variant="verified" className="text-sm">

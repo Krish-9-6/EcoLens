@@ -40,22 +40,19 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // Check if user has a profile with brand_id
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('brand_id')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.brand_id) {
+    // UPDATED: Check for brand_id in user's app_metadata
+    if (!user.app_metadata?.brand_id) {
       // User is authenticated but has no brand association
-      const redirectUrl = new URL('/auth/setup-brand', request.url)
-      return NextResponse.redirect(redirectUrl)
+      // Prevent redirect loops from the setup-brand page itself
+      if (request.nextUrl.pathname !== '/auth/setup-brand') {
+        const redirectUrl = new URL('/auth/setup-brand', request.url)
+        return NextResponse.redirect(redirectUrl)
+      }
     }
   }
 
   // Redirect authenticated users away from auth pages
-  if (request.nextUrl.pathname.startsWith('/auth/login') || 
+  if (request.nextUrl.pathname.startsWith('/auth/login') ||
       request.nextUrl.pathname.startsWith('/auth/signup')) {
     if (user) {
       const redirectTo = request.nextUrl.searchParams.get('redirectTo') || '/dashboard'

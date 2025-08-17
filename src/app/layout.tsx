@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Sora, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "../styles/accessibility.css";
+import SessionProvider from "./auth/SessionProvider";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -203,7 +204,9 @@ export default function RootLayout({
         className={`${manrope.variable} ${sora.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
