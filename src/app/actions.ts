@@ -102,8 +102,7 @@ export const addSupplier = withFormAuth(
  * This now uses a Supabase Admin Client for the entire operation to bypass RLS issues.
  */
 export const setupBrand = withFormAuth(
-  // The 'supabase' client from the wrapper is no longer needed here, but we keep the signature consistent.
-  async (_, user: User, prevState: FormState, formData: FormData): Promise<FormState> => {
+  async (supabase, user: User, prevState: FormState, formData: FormData): Promise<FormState> => {
     try {
       // 1. Validate form data
       const brandName = formData.get('name') as string;
@@ -114,16 +113,8 @@ export const setupBrand = withFormAuth(
         }
       }
 
-      // 2. Create a Supabase Admin Client. This will bypass all RLS policies.
-      // Make sure SUPABASE_SERVICE_ROLE_KEY is set in your .env.local file.
-      const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } } // Important for server-side use
-      );
-
-      // 3. Create the new brand using the Admin Client
-      const { data: newBrand, error: brandError } = await supabaseAdmin
+      // 2. Insert the brand using the authenticated Supabase client
+      const { data: newBrand, error: brandError } = await supabase
         .from('brands')
         .insert({ name: brandName.trim() })
         .select()
@@ -134,10 +125,17 @@ export const setupBrand = withFormAuth(
         if (brandError.code === '23505') { // unique_violation
           return { message: 'A brand with this name already exists.' }
         }
-        return { message: 'Failed to create brand due to a database permission error.' }
+        return { message: `Failed to create brand: ${brandError.message}` }
       }
 
-      // 4. Update the user's app_metadata with the new brand_id using the Admin Client
+      // 3. Use Admin client only for updating user metadata
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } }
+      );
+
+      // 4. Update the user's app_metadata with the new brand_id
       const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(
         user.id,
         { app_metadata: { ...user.app_metadata, brand_id: newBrand.id } }

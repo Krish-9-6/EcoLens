@@ -80,9 +80,10 @@ FOR SELECT
 USING (true);
 
 CREATE POLICY "Allow authenticated users to create brands" 
-ON public.brands
-FOR INSERT TO authenticated 
-WITH CHECK (true);
+ON public.brands 
+FOR INSERT 
+TO authenticated 
+WITH CHECK ((SELECT auth.uid()) IS NOT NULL);
 
 -- Allow public read access to all suppliers
 CREATE POLICY "Allow public read access to suppliers" 
