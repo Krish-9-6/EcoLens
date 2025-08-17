@@ -3,6 +3,7 @@ import { Manrope, Sora, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "../styles/accessibility.css";
 import SessionProvider from "./auth/SessionProvider";
+import { Toaster } from 'sonner'
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -205,7 +206,23 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <SessionProvider>
-          {children}
+           {children}
+          {/* Sonner Toaster for toast notifications - positioned at the end for proper z-index */}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            expand
+            toastOptions={{
+              duration: 5000,
+              style: {
+                background: 'hsl(var(--background))',
+                border: '1px solid hsl(var(--border))',
+                color: 'hsl(var(--foreground))',
+              },
+            }}
+            theme="system" // Automatically switches between light/dark based on system preference
+          />
         </SessionProvider>
       </body>
     </html>
