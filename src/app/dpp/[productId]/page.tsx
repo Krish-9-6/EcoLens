@@ -1,18 +1,16 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { fetchDppData } from '<ecolens>/lib/data'
+import { requireAuth } from '<ecolens>/lib/auth'
 import { ProductHeader } from '<ecolens>/components/dpp/ProductHeader'
 import { JourneyTimeline } from '<ecolens>/components/dpp/JourneyTimeline'
 import { SupplyChainMapLazy } from '<ecolens>/components/dpp/SupplyChainMapLazy'
 import { CertificateGallery } from '<ecolens>/components/dpp/CertificateGallery'
 import { StickySubheader } from '<ecolens>/components/dpp/StickySubheader'
-import { SummaryRow } from '<ecolens>/components/dpp/SummaryRow'
 import { DppErrorBoundary } from '<ecolens>/components/dpp/DppErrorBoundary'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '<ecolens>/components/ui/card'
 import { Badge } from '<ecolens>/components/ui/badge'
 import { MapPin, Shield, Clock, Users } from 'lucide-react'
-import { redirect } from 'next/navigation'
-import { createClient } from '<ecolens>/lib/supabase/server'
 
 interface DppPageProps {
   params: Promise<{
@@ -63,15 +61,9 @@ export async function generateMetadata({ params }: DppPageProps): Promise<Metada
 
 export default async function DppPage({ params }: DppPageProps) {
   const { productId } = await params
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/auth/login')
-  }
+  
+  // This will redirect to login if not authenticated
+  await requireAuth()
   
   // Check if Supabase is configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

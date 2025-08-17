@@ -2,233 +2,159 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { ProductSchema, SupplierSchema } from '../lib/schemas'
-import { withFormAuth } from '../lib/server-action-auth'
-import type { FormState } from '../lib/types'
+import { ZodError } from 'zod'
+import { User, createClient } from '@supabase/supabase-js'
+
+import { ProductSchema, SupplierSchema } from '<ecolens>/lib/schemas'
+import { withFormAuth } from '<ecolens>/lib/server-action-auth'
+import type { FormState } from '<ecolens>/lib/types'
 
 /**
- * Server Action: Create a new product
- * Requirements: 1.2, 1.3, 1.4, 3.1, 3.2, 4.3, 4.4
- * 
- * Validates product data, extracts brand_id from authenticated user,
- * inserts product with automatic brand association, and handles errors
+ * Server Action: Create a new product.
+ * This action is protected and requires the user to be authenticated and have a brand_id.
  */
 export const createProduct = withFormAuth(
-  async (supabase, brandId: string, prevState: FormState, formData: FormData): Promise<FormState> => {
+  async (supabase, user: User, prevState: FormState, formData: FormData): Promise<FormState> => {
     try {
-      // Extract and validate form data
-      const validatedFields = ProductSchema.safeParse({
+      // 1. Validate form data
+      const validatedData = ProductSchema.parse({
         name: formData.get('name'),
+        description: formData.get('description'),
       })
 
-      // Return validation errors if any
-      if (!validatedFields.success) {
-        return {
-          errors: validatedFields.error.flatten().fieldErrors,
-          message: 'Validation failed. Please check your inputs.',
-        }
+      // 2. Get the user's brand_id from their app_metadata
+      const brandId = user.app_metadata?.brand_id;
+
+      if (!brandId) {
+        return { message: 'Error: Could not find your brand association. Please log in again.' }
       }
 
-      // Insert product with brand_id automatically set
-      const { data: product, error: insertError } = await supabase
-        .from('products')
-        .insert({
-          name: validatedFields.data.name,
-          brand_id: brandId,
-        })
-        .select()
-        .single()
+      // 3. Insert the new product into the database
+      const { error } = await supabase.from('products').insert({
+        ...validatedData,
+        brand_id: brandId,
+      })
 
-      // Handle database insertion errors
-      if (insertError) {
-        console.error('Database error creating product:', insertError)
-        
-        // Handle specific database errors
-        if (insertError.code === '23505') {
-          return {
-            message: 'A product with this name already exists for your brand.',
-          }
-        }
-        
-        if (insertError.code === '23503') {
-          return {
-            message: 'Invalid brand association. Please try signing in again.',
-          }
-        }
-
-        return {
-          message: 'Failed to create product. Please try again.',
-        }
+      if (error) {
+        console.error('Database error creating product:', error)
+        return { message: `Database Error: ${error.message}` }
       }
-
-      // Success: revalidate and redirect
-      revalidatePath('/dashboard/products')
-      redirect(`/dashboard/products/${product.id}`)
-      
     } catch (error) {
-      console.error('Unexpected error in createProduct:', error)
-      return {
-        message: 'An unexpected error occurred. Please try again.',
+      if (error instanceof ZodError) {
+        return {
+          errors: error.flatten().fieldErrors,
+          message: 'Validation Error: Please check the fields.',
+        }
       }
+      console.error('Unexpected error in createProduct:', error)
+      return { message: 'An unexpected error occurred.' }
     }
+
+    // 4. Revalidate and redirect
+    revalidatePath('/dashboard/products')
+    redirect('/dashboard/products')
   }
 )
 
 /**
- * Server Action: Add supplier to product with atomic operations
- * Requirements: 2.1, 2.4, 2.5, 3.1, 3.2, 4.3, 4.4
- * 
- * Validates supplier data, creates supplier and product-supplier relationship
- * in transaction-like operations, maintains referential integrity
+ * Server Action: Add a new supplier to a product's supply chain.
+ * This action is protected and requires authentication.
  */
-export const addSupplierToProduct = withFormAuth(
-  async (supabase, brandId: string, prevState: FormState, formData: FormData): Promise<FormState> => {
+export const addSupplier = withFormAuth(
+  async (supabase, user: User, prevState: FormState, formData: FormData): Promise<FormState> => {
     try {
-      // Extract and validate form data
-      const validatedFields = SupplierSchema.safeParse({
+      // 1. Validate form data
+      const validatedData = SupplierSchema.parse({
         name: formData.get('name'),
-        tier: formData.get('tier'),
+        tier: Number(formData.get('tier')),
         location: formData.get('location'),
-        productId: formData.get('productId'),
-        parentSupplierId: formData.get('parentSupplierId') || null,
+        product_id: formData.get('product_id'),
+        parent_supplier_id: formData.get('parent_supplier_id') || null,
       })
-
-      // Return validation errors if any
-      if (!validatedFields.success) {
-        return {
-          errors: validatedFields.error.flatten().fieldErrors,
-          message: 'Validation failed. Please check your inputs.',
-        }
-      }
-
-      const { name, tier, location, productId, parentSupplierId } = validatedFields.data
-
-      // Verify product belongs to the current brand
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .select('id, brand_id')
-        .eq('id', productId)
-        .single()
-
-      if (productError || !product) {
-        return {
-          message: 'Product not found or access denied.',
-        }
-      }
-
-      if (product.brand_id !== brandId) {
-        return {
-          message: 'Access denied: Product belongs to another brand.',
-        }
-      }
-
-      // If parentSupplierId is provided, verify it exists and belongs to the brand
-      if (parentSupplierId) {
-        const { data: parentSupplier, error: parentError } = await supabase
-          .from('suppliers')
-          .select('id, brand_id, tier')
-          .eq('id', parentSupplierId)
-          .single()
-
-        if (parentError || !parentSupplier) {
-          return {
-            message: 'Parent supplier not found or access denied.',
-          }
-        }
-
-        if (parentSupplier.brand_id !== brandId) {
-          return {
-            message: 'Access denied: Parent supplier belongs to another brand.',
-          }
-        }
-
-        // Verify tier hierarchy is correct (parent tier should be one less than child tier)
-        if (parentSupplier.tier !== tier - 1) {
-          return {
-            message: `Invalid tier hierarchy: Tier ${tier} supplier must have a Tier ${tier - 1} parent.`,
-          }
-        }
-      }
-
-      // Step 1: Create the supplier
-      const { data: supplier, error: supplierError } = await supabase
-        .from('suppliers')
-        .insert({
-          name,
-          tier,
-          location,
-          parent_supplier_id: parentSupplierId,
-          brand_id: brandId,
-        })
-        .select()
-        .single()
-
-      if (supplierError) {
-        console.error('Database error creating supplier:', supplierError)
-        
-        // Handle specific database errors
-        if (supplierError.code === '23505') {
-          return {
-            message: 'A supplier with this name already exists for your brand.',
-          }
-        }
-        
-        if (supplierError.code === '23503') {
-          return {
-            message: 'Invalid parent supplier or brand association.',
-          }
-        }
-
-        if (supplierError.code === '23514') {
-          return {
-            message: 'Invalid tier hierarchy: Check tier and parent supplier relationship.',
-          }
-        }
-
-        return {
-          message: 'Failed to create supplier. Please try again.',
-        }
-      }
-
-      // Step 2: Create the product-supplier relationship
-      const { error: relationshipError } = await supabase
-        .from('product_suppliers')
-        .insert({
-          product_id: productId,
-          supplier_id: supplier.id,
-        })
-
-      if (relationshipError) {
-        console.error('Database error creating product-supplier relationship:', relationshipError)
-        
-        // If relationship creation fails, we should clean up the supplier
-        // In a real transaction, this would be handled automatically
-        // For now, we'll log the error and let the user know
-        console.error('Orphaned supplier created:', supplier.id)
-        
-        if (relationshipError.code === '23505') {
-          return {
-            message: 'This supplier is already associated with the product.',
-          }
-        }
-
-        return {
-          message: 'Failed to associate supplier with product. Please try again.',
-        }
-      }
-
-      // Success: revalidate the product page to show the new supplier
-      revalidatePath(`/dashboard/products/${productId}`)
       
-      return {
-        message: 'Supplier added successfully!',
+      // 2. Insert the new supplier
+      const { error } = await supabase.from('suppliers').insert(validatedData)
+
+      if (error) {
+        console.error('Database error adding supplier:', error)
+        return { message: `Database Error: ${error.message}` }
       }
-      
     } catch (error) {
-      console.error('Unexpected error in addSupplierToProduct:', error)
-      return {
-        message: 'An unexpected error occurred. Please try again.',
+      if (error instanceof ZodError) {
+        return {
+          errors: error.flatten().fieldErrors,
+          message: 'Validation Error: Please check the fields.',
+        }
       }
+      console.error('Unexpected error in addSupplier:', error)
+      return { message: 'An unexpected error occurred.' }
     }
+
+    // 3. Revalidate and redirect
+    const productId = formData.get('product_id') as string
+    revalidatePath(`/dashboard/products/${productId}`)
+    redirect(`/dashboard/products/${productId}`)
   }
 )
+
+/**
+ * Server Action: Create a new brand and link it to the user's app_metadata.
+ * This now uses a Supabase Admin Client for the entire operation to bypass RLS issues.
+ */
+export const setupBrand = withFormAuth(
+  // The 'supabase' client from the wrapper is no longer needed here, but we keep the signature consistent.
+  async (_, user: User, prevState: FormState, formData: FormData): Promise<FormState> => {
+    try {
+      // 1. Validate form data
+      const brandName = formData.get('name') as string;
+      if (!brandName || brandName.trim().length < 2) {
+        return {
+          errors: { name: ['Brand name must be at least 2 characters'] },
+          message: 'Please enter a valid brand name.',
+        }
+      }
+
+      // 2. Create a Supabase Admin Client. This will bypass all RLS policies.
+      // Make sure SUPABASE_SERVICE_ROLE_KEY is set in your .env.local file.
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } } // Important for server-side use
+      );
+
+      // 3. Create the new brand using the Admin Client
+      const { data: newBrand, error: brandError } = await supabaseAdmin
+        .from('brands')
+        .insert({ name: brandName.trim() })
+        .select()
+        .single();
+
+      if (brandError) {
+        console.error('Database error creating brand:', brandError);
+        if (brandError.code === '23505') { // unique_violation
+          return { message: 'A brand with this name already exists.' }
+        }
+        return { message: 'Failed to create brand due to a database permission error.' }
+      }
+
+      // 4. Update the user's app_metadata with the new brand_id using the Admin Client
+      const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(
+        user.id,
+        { app_metadata: { ...user.app_metadata, brand_id: newBrand.id } }
+      )
+
+      if (updateUserError) {
+        console.error('Error updating user metadata:', updateUserError);
+        return { message: 'Failed to link brand to your profile. Please contact support.' }
+      }
+
+    } catch (error) {
+      console.error('Unexpected error in setupBrand:', error);
+      return { message: 'An unexpected error occurred. Please try again.' }
+    }
+
+    // 5. Revalidate and redirect on success
+    revalidatePath('/dashboard', 'layout');
+    redirect('/dashboard');
+  }
+);

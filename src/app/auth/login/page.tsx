@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import AuthForm from '../AuthForm'
 
 export const metadata: Metadata = {
   title: 'Sign In - Veritas Brand Dashboard',
@@ -18,11 +19,8 @@ export default function LoginPage() {
           </p>
         </div>
         
-        {/* Login form will be implemented in task 6 */}
         <div className="bg-white p-8 rounded-lg shadow">
-          <p className="text-center text-gray-500">
-            Login form will be implemented in the Product Creation Form Components task.
-          </p>
+          <AuthForm />
         </div>
       </div>
     </div>
